@@ -2,6 +2,13 @@
 
 ![vega-jurisdiction-sdk](assets/tile.svg)
 
+<!-- vega-install-order -->
+> **Build order: 3/3. This kit needs 2 other Vega kits installed first.** Install them in this order, then this one:
+> 1/3 `vega-custody-sdk`  
+> 2/3 `vega-governance-jacket-sdk`  
+> 3/3 `vega-jurisdiction-sdk` (this kit)
+> Install each with `pip install --no-deps git+https://github.com/jasonblasiak868-code/<name>` in the order shown, plus `pip install cryptography`. Full steps: [INTEGRATION_GUIDE](https://github.com/jasonblasiak868-code/vega-umbrella-sdk/blob/main/INTEGRATION_GUIDE.md).
+
 Jurisdictional protocol keys: each jurisdiction has three branch keys and a voter roll; a policy needs two branches approving the same text; the People's Veto pauses it; the Kronos root changes only with consent from two thirds of the member jurisdictions.
 
 > **Licensing.** Source-available, not open source. Free for personal use; free for registered small businesses (under US$1M revenue and valuation); everyone else needs a commercial license (see LICENSE; for a commercial license write to jasonblasiak.ai.mail@gmail.com). Patent pending. Draft licence text, not yet reviewed by an attorney.

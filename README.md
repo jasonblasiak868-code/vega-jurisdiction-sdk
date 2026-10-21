@@ -13,7 +13,7 @@ Jurisdictional protocol keys: each jurisdiction has three branch keys and a vote
 | Version | 0.1.0 |
 | Python | >=3.10 |
 | Dependencies | cryptography>=42, vega-custody-sdk, vega-governance-jacket-sdk |
-| Tests | 39 tests in 1 file, all passing |
+| Tests | 42 tests in 2 files, all passing |
 | Status | BUILT: protocol, signing |
 
 ## End-to-end functions

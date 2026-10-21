@@ -21,6 +21,7 @@ The voter roll is fixed at registration (changing it means a new jurisdiction re
 does not interpret what a rule means (a rule is text a human or another SDK acts on). Nothing here is legal advice and no real government's keys or rules ship with it."""
 import hashlib
 import re
+import threading
 import time
 
 from vega_custody.dag.dag import DagError
@@ -119,6 +120,7 @@ def reg_params(p) -> dict:
 class Jurisdictions:
     def __init__(self, commit, dag, clock=time.time):
         self.commit, self.dag, self._clock = commit, dag, clock
+        self._lock = threading.RLock()      # validate, record and apply are one step: the live state is always what replaying the chain would give
         self._j = {}
         self._seq = 0
         self.root = None
@@ -343,14 +345,15 @@ class Jurisdictions:
 
     def _commit(self, kind, p):
         """Verify, write to the chain, then apply. A chain that cannot be written changes nothing."""
-        p = dict(p, at=int(self._clock()))
-        fn = self._validate(kind, p)
-        try:
-            self.dag.record(kind, p)
-        except DagError as exc:
-            raise JurisdictionRefused("could not record the event: %s" % exc) from exc
-        fn()
-        return p
+        with self._lock:
+            p = dict(p, at=int(self._clock()))
+            fn = self._validate(kind, p)
+            try:
+                self.dag.record(kind, p)
+            except DagError as exc:
+                raise JurisdictionRefused("could not record the event: %s" % exc) from exc
+            fn()
+            return p
 
     # ---- public actions ----------------------------------------------------------------------------------
     def register(self, country, name, branches, roll, signed) -> str:
@@ -359,14 +362,15 @@ class Jurisdictions:
         if not isinstance(roll, list):
             raise JurisdictionRefused("roll is a list")
         _check_reg_shape(p)
-        if country in self._j:
-            raise JurisdictionRefused("jurisdiction already registered")
-        try:
-            out = self.commit.commit(REGISTER_ACTION, reg_params(p), signed, route="human")
-        except CommitRefused as exc:
-            raise JurisdictionRefused("registration needs the owner's commitment: %s" % exc) from exc
-        self._commit("JURIS_REGISTERED", dict(p, commit_entry=out["entry"]))
-        return self._j[country]["pk"]
+        with self._lock:                                  # 'already registered?' and the commitment burn and the record: one step
+            if country in self._j:
+                raise JurisdictionRefused("jurisdiction already registered")
+            try:
+                out = self.commit.commit(REGISTER_ACTION, reg_params(p), signed, route="human")
+            except CommitRefused as exc:
+                raise JurisdictionRefused("registration needs the owner's commitment: %s" % exc) from exc
+            self._commit("JURIS_REGISTERED", dict(p, commit_entry=out["entry"]))
+            return self._j[country]["pk"]
 
     def submit_position(self, country, branch, seq, approved, rules, sig):
         self._commit("JURIS_POSITION", {"country": country, "branch": branch, "seq": seq, "approved": approved, "rules": rules, "sig": sig})

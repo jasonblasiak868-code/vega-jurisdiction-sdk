@@ -248,6 +248,8 @@ class Jurisdictions:
             if v["resolved"] is None and (v["passed_seq"] is not None or at < v["closes_at"]):
                 raise JurisdictionRefused("a veto is already open or in force")
         vid = _sha(S.canonical(signed))
+        if vid in j["vetoes"]:
+            raise JurisdictionRefused("this veto was already opened: a signed opening cannot be replayed")
 
         def apply():
             self._seq += 1
